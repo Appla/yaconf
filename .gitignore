@@ -28,3 +28,4 @@ tmp/
 .vs/
 Debug/
 Release/
+.idea/
