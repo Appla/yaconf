@@ -196,11 +196,29 @@ static void php_yaconf_zval_persistent(zval *zv, zval *rv) /* {{{ */ {
 				php_yaconf_hash_copy(Z_ARRVAL_P(rv), Z_ARRVAL_P(zv));
 			}
 			break;
+        case IS_NULL:
+            ZVAL_NULL(rv);
+            break;
+        case IS_UNDEF:
+            ZVAL_UNDEF(rv);
+            break;
+        case IS_FALSE:
+            ZVAL_FALSE(rv);
+            break;
+        case IS_TRUE:
+            ZVAL_TRUE(rv);
+            break;
+//        case _IS_BOOL:
+//            ZVAL_BOOL(rv, Z_TYPE_P(zv) == IS_TRUE ? 1 : 0);
+//            break;
+        case IS_DOUBLE:
+            ZVAL_DOUBLE(rv, Z_DVAL_P(zv));
+            break;
+        case IS_LONG:
+            ZVAL_LONG(rv, Z_LVAL_P(zv));
+            break;
 		case IS_RESOURCE:
 		case IS_OBJECT:
-		case _IS_BOOL:
-		case IS_LONG:
-		case IS_NULL:
 			ZEND_ASSERT(0);
 			break;
 	}
@@ -554,7 +572,7 @@ PHP_MINIT_FUNCTION(yaconf)
 				            ZVAL_UNDEF(&active_ini_file_section);
 							YACONF_G(parse_err) = 0;
 							php_yaconf_hash_init(&result, 128);
-							if (zend_parse_ini_file(&fh, 1, 0 /* ZEND_INI_SCANNER_NORMAL */,
+							if (zend_parse_ini_file(&fh, 1, 2 /* ZEND_INI_SCANNER_NORMAL 0, RAW 1, TYPED 2 */,
 									php_yaconf_ini_parser_cb, (void *)&result) == FAILURE || YACONF_G(parse_err)) {
 								YACONF_G(parse_err) = 0;
 								php_yaconf_hash_destroy(Z_ARRVAL(result));
@@ -646,7 +664,7 @@ PHP_RINIT_FUNCTION(yaconf)
 							ZVAL_UNDEF(&active_ini_file_section);
 							YACONF_G(parse_err) = 0;
 							php_yaconf_hash_init(&result, 128);
-							if (zend_parse_ini_file(&fh, 1, 0 /* ZEND_INI_SCANNER_NORMAL */,
+							if (zend_parse_ini_file(&fh, 1, 2 /* ZEND_INI_SCANNER_NORMAL 0, RAW1, TYPED 2*/,
 									php_yaconf_ini_parser_cb, (void *)&result) == FAILURE || YACONF_G(parse_err)) {
 								YACONF_G(parse_err) = 0;
 								php_yaconf_hash_destroy(Z_ARRVAL(result));
