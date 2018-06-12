@@ -114,7 +114,7 @@ static void php_yaconf_hash_init(zval *zv, size_t size) /* {{{ */ {
 #else
 	Z_TYPE_FLAGS_P(zv) = 0;
 #endif
-} 
+}
 /* }}} */
 
 static void php_yaconf_hash_destroy(HashTable *ht) /* {{{ */ {
@@ -166,7 +166,7 @@ static zend_string* php_yaconf_str_persistent(char *str, size_t len) /* {{{ */ {
 	return key;
 }
 /* }}} */
-	
+
 static void php_yaconf_hash_copy(HashTable *target, HashTable *source) /* {{{ */ {
 	zend_string *key;
 	zend_long idx;
@@ -199,18 +199,18 @@ static void php_yaconf_zval_persistent(zval *zv, zval *rv) /* {{{ */ {
         case IS_NULL:
             ZVAL_NULL(rv);
             break;
-        case IS_UNDEF:
-            ZVAL_UNDEF(rv);
-            break;
+        // case IS_UNDEF:
+        //     ZVAL_UNDEF(rv);
+        //     break;
         case IS_FALSE:
             ZVAL_FALSE(rv);
             break;
         case IS_TRUE:
             ZVAL_TRUE(rv);
             break;
-//        case _IS_BOOL:
-//            ZVAL_BOOL(rv, Z_TYPE_P(zv) == IS_TRUE ? 1 : 0);
-//            break;
+		// case _IS_BOOL:
+		// 	ZVAL_BOOL(rv, Z_TYPE_P(zv) == IS_TRUE ? 1 : 0);
+		// 	break;
         case IS_DOUBLE:
             ZVAL_DOUBLE(rv, Z_DVAL_P(zv));
             break;
@@ -280,7 +280,7 @@ static void php_yaconf_simple_parser_cb(zval *key, zval *value, zval *index, int
 			if ((pzval = zend_hash_index_find(Z_ARRVAL_P(arr), idx)) == NULL) {
 				php_yaconf_hash_init(&rv, 8);
 				pzval = zend_hash_index_update(Z_ARRVAL_P(arr), idx, &rv);
-			} 
+			}
 		} else {
 			char *seg, *ptr;
 			char *skey = estrndup(Z_STRVAL_P(key), Z_STRLEN_P(key));
@@ -312,7 +312,7 @@ static void php_yaconf_simple_parser_cb(zval *key, zval *value, zval *index, int
 					php_yaconf_hash_init(&rv, 8);
 					pzval = php_yaconf_symtable_update(Z_ARRVAL_P(target),
 							php_yaconf_str_persistent(seg, strlen(seg)), &rv);
-				} 
+				}
 			}
 			efree(skey);
 		}
@@ -393,11 +393,11 @@ static void php_yaconf_ini_parser_cb(zval *key, zval *value, zval *index, int ca
 			if ((parent = zend_symtable_str_find(Z_ARRVAL_P(arr), seg, strlen(seg)))) {
 				php_yaconf_hash_copy(Z_ARRVAL(active_ini_file_section), Z_ARRVAL_P(parent));
 			}
-		} 
+		}
 	    seg = skey + strlen(skey) - 1;
 		while (*seg == ' ' || *seg == ':') {
 			*(seg--) = '\0';
-		}	
+		}
 		php_yaconf_symtable_update(Z_ARRVAL_P(arr),
 				php_yaconf_str_persistent(skey, strlen(skey)), &active_ini_file_section);
 
@@ -462,7 +462,7 @@ PHP_METHOD(yaconf, get) {
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S|z", &name, &defv) == FAILURE) {
 		return;
-	} 
+	}
 
 	val = php_yaconf_get(name);
 	if (val) {
@@ -482,7 +482,7 @@ PHP_METHOD(yaconf, has) {
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "S", &name) == FAILURE) {
 		return;
-	} 
+	}
 
 	RETURN_BOOL(php_yaconf_has(name));
 }
@@ -529,7 +529,7 @@ PHP_MINIT_FUNCTION(yaconf)
 
 	yaconf_ce = zend_register_internal_class_ex(&ce, NULL);
 
-	if ((dirname = YACONF_G(directory)) && (dirlen = strlen(dirname)) 
+	if ((dirname = YACONF_G(directory)) && (dirlen = strlen(dirname))
 #ifndef ZTS
 			&& !VCWD_STAT(dirname, &dir_sb) && S_ISDIR(dir_sb.st_mode)
 #endif
@@ -574,13 +574,13 @@ PHP_MINIT_FUNCTION(yaconf)
 							php_yaconf_hash_init(&result, 128);
 							if (zend_parse_ini_file(&fh, 1, 2 /* ZEND_INI_SCANNER_NORMAL 0, RAW 1, TYPED 2 */,
 									php_yaconf_ini_parser_cb, (void *)&result) == FAILURE || YACONF_G(parse_err)) {
-								YACONF_G(parse_err) = 0;
+                                YACONF_G(parse_err) = 0;
 								php_yaconf_hash_destroy(Z_ARRVAL(result));
 								free(namelist[i]);
 								continue;
 							}
-						}
-						
+                        }
+
 						php_yaconf_symtable_update(ini_containers,
 								php_yaconf_str_persistent(namelist[i]->d_name, p - namelist[i]->d_name), &result);
 
@@ -671,7 +671,7 @@ PHP_RINIT_FUNCTION(yaconf)
 								free(namelist[i]);
 								continue;
 							}
-						}
+                        }
 
 
 						file_key = php_yaconf_str_persistent(namelist[i]->d_name, p - namelist[i]->d_name);
@@ -697,7 +697,7 @@ PHP_RINIT_FUNCTION(yaconf)
 				}
 				return SUCCESS;
 			}
-		} 
+		}
 		YACONF_DEBUG("stat config directory failed");
 	}
 
