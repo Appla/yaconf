@@ -188,8 +188,13 @@ static void php_yaconf_zval_persistent(zval *zv, zval *rv) /* {{{ */ {
 		case IS_CONSTANT:
 #endif
 		case IS_STRING:
-			ZVAL_INTERNED_STR(rv, php_yaconf_str_persistent(Z_STRVAL_P(zv), Z_STRLEN_P(zv)));
-			break;
+			if (strcmp(Z_STRVAL_P(zv), PHP_YACONF_EMPTY_ARRAY) == 0) {
+				ZVAL_NEW_ARR(zv);
+				zend_hash_init(Z_ARRVAL_P(zv), 8, NULL, ZVAL_PTR_DTOR, 0);
+			} else {
+				ZVAL_INTERNED_STR(rv, php_yaconf_str_persistent(Z_STRVAL_P(zv), Z_STRLEN_P(zv)));
+				break;
+			}
 		case IS_ARRAY:
 			{
 				php_yaconf_hash_init(rv, zend_hash_num_elements(Z_ARRVAL_P(zv)));
@@ -526,6 +531,11 @@ PHP_MINIT_FUNCTION(yaconf)
 	REGISTER_INI_ENTRIES();
 
 	INIT_CLASS_ENTRY(ce, "Yaconf", yaconf_methods);
+
+	//register empty arr
+#ifdef PHP_YACONF_EMPTY_ARRAY
+		REGISTER_STRINGL_CONSTANT("YACONF_EMPTY_ARRAY", PHP_YACONF_EMPTY_ARRAY, sizeof(PHP_YACONF_EMPTY_ARRAY) - 1, CONST_PERSISTENT | CONST_CS);
+#endif
 
 	yaconf_ce = zend_register_internal_class_ex(&ce, NULL);
 

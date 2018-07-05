@@ -37,6 +37,8 @@ extern zend_module_entry yaconf_module_entry;
 #endif
 
 #define PHP_YACONF_VERSION  "1.0.8-kb"
+#define PHP_YACONF_EMPTY_ARRAY  "^_^YACONF_EMPTY_ARRAY^_^"
+
 #ifdef YACONF_DEBUG
 #undef YACONF_DEBUG
 #define YACONF_DEBUG(m) fprintf(stderr, "%s\n", m);
