@@ -186,10 +186,26 @@ static void php_yaconf_zval_persistent(zval *zv, zval *rv) /* {{{ */ {
 	switch (Z_TYPE_P(zv)) {
 #if PHP_VERSION_ID < 70300
 		case IS_CONSTANT:
+			zval *const_zv = zend_get_constant(Z_STR_P(zv));
+			if (Z_TYPE_P(const_zv) == IS_ARRAY) {
+				php_yaconf_hash_init(rv, zend_hash_num_elements(Z_ARRVAL_P(const_zv)));
+				php_yaconf_hash_copy(Z_ARRVAL_P(rv), Z_ARRVAL_P(const_zv));
+				break;
+			}
 #endif
 		case IS_STRING:
-			ZVAL_INTERNED_STR(rv, php_yaconf_str_persistent(Z_STRVAL_P(zv), Z_STRLEN_P(zv)));
-			break;
+			if (strcmp(Z_STRVAL_P(zv), "Array") == 0) {
+				ZVAL_INTERNED_STR(rv, php_yaconf_str_persistent("ThisIsArray", sizeof("ThisIsArray") - 1));
+				break;
+			}
+			if (strcmp(Z_STRVAL_P(zv), PHP_YACONF_EMPTY_ARRAY) == 0) {
+				ZVAL_NEW_ARR(zv);
+				//ZVAL_NEW_PERSISTENT_ARR(zv);
+				zend_hash_init(Z_ARRVAL_P(zv), 8, NULL, ZVAL_PTR_DTOR, 0);
+			} else {
+				ZVAL_INTERNED_STR(rv, php_yaconf_str_persistent(Z_STRVAL_P(zv), Z_STRLEN_P(zv)));
+				break;
+			}
 		case IS_ARRAY:
 			{
 				php_yaconf_hash_init(rv, zend_hash_num_elements(Z_ARRVAL_P(zv)));
@@ -514,6 +530,39 @@ PHP_GINIT_FUNCTION(yaconf)
 }
 /* }}} */
 
+/**
+ * register constant
+ * @param int type
+ * @param int module_number
+ */
+static void register_empty_php_arr(int type, int module_number)
+{
+	/**
+	 * 1 means string
+	 * 2 means array
+	 */
+	int type_string = 1, type_array = 2;
+#ifndef YACONF_EMPTY_ARRAY
+#define YACONF_EMPTY_ARRAY = "YACONF_EMPTY_ARRAY";
+#endif
+	if (type_string == type) {
+		//using string
+#ifdef PHP_YACONF_EMPTY_ARRAY
+		REGISTER_STRINGL_CONSTANT(YACONF_EMPTY_ARRAY, PHP_YACONF_EMPTY_ARRAY, sizeof(PHP_YACONF_EMPTY_ARRAY) - 1, CONST_PERSISTENT | CONST_CS);
+		//zend_register_stringl_constant(YACONF_EMPTY_ARRAY, sizeof(YACONF_EMPTY_ARRAY) - 1, PHP_YACONF_EMPTY_ARRAY, sizeof(PHP_YACONF_EMPTY_ARRAY) - 1, CONST_PERSISTENT | CONST_CS, module_number);
+#endif
+	}  else if (type_array == type) {
+		zend_constant c;
+		ZVAL_NEW_ARR(c.value);
+		zend_hash_init(Z_ARRVAL_P(c.value), 8, NULL, ZVAL_PTR_DTOR, 0);
+//		ZVAL_NEW_STR(&c.value, zend_string_init(YACONF_EMPTY_ARRAY, sizeof(YACONF_EMPTY_ARRAY) - 1, CONST_PERSISTENT));
+		c.flags = CONST_PERSISTENT | CONST_CS;
+		c.name = zend_string_init(YACONF_EMPTY_ARRAY, sizeof(YACONF_EMPTY_ARRAY) - 1, CONST_PERSISTENT);
+		c.module_number = module_number;
+		zend_register_constant(&c);
+	}
+}
+
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(yaconf)
@@ -526,6 +575,9 @@ PHP_MINIT_FUNCTION(yaconf)
 	REGISTER_INI_ENTRIES();
 
 	INIT_CLASS_ENTRY(ce, "Yaconf", yaconf_methods);
+
+	//register empty arr
+	register_empty_php_arr(1, module_number);
 
 	yaconf_ce = zend_register_internal_class_ex(&ce, NULL);
 
